@@ -1,0 +1,135 @@
+
+#include <Wire.h>  // Must include Wire library for I2C
+#include <SoftwareSerial.h>
+#include <SparkFun_MMA8452Q.h>  //Include accelerometer Library.
+
+// Basic Bluetooth sketch HC-06_01
+// Connect the Hc-06 module and communicate using the serial monitor
+//
+// The HC-06 defaults to AT mode when first powered on.
+// The default baud rate is 9600
+// The Hc-06 requires all AT commands to be in uppercase. NL+CR should
+// not be added to the command string
+//////////////////////////////////////////////////////////////////////
+
+long prevMils1 = 0;  //will store last time function was updated
+long prevMils2 = 0;  //will store last time function was updated
+long prevMils3 = 0;  //will store last time function was updated
+long prevMils4 = 0;  //will store last time function was updated
+
+long int1000msec = 1000;  //interval at which to execute function
+long int500msec = 500;    //interval at which to execute function
+long int250msec = 250;    //interval at which to execute function
+long int100msec = 100;    //interval at which to execute function
+long int10msec = 10;      //interval at which to execute function
+
+const int rxpin = 2;
+const int txpin = 3;
+
+char xbuffer[32] = "a 12345";
+char ybuffer[16] = "b 12345";
+char zbuffer[16] = "c 12345";
+
+
+SoftwareSerial BTserial(rxpin, txpin);  // RX | TX
+// Connect the HC-06 TX to the Arduino RX on pin 2.
+// Connect the HC-06 RX to the Arduino TX on pin 3 through a voltage divider.
+//
+
+// Begin using the library by creating an instance of the MMA8452Q
+//  class. We'll call it "accel". That's what we'll reference from
+//  here on out.
+MMA8452Q accel;
+
+
+int x = 0;
+int y = 0;
+int z = 0;
+String x_str = String(100);
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Enter AT commands:");
+
+  // HC-06 default serial speed is 9600
+  // Debugged using phone app called Serial Bluetooth Terminal.
+  BTserial.begin(9600);
+
+  /////// From SparkFun and Jim Lindblom's code.
+  // Choose your adventure! There are a few options when it comes
+  // to initializing the MMA8452Q:
+  //  1. Default init. This will set the accelerometer up
+  //     with a full-scale range of +/-2g, and an output data rate
+  //     of 800 Hz (fastest).
+  //  accel.init(); //Full scale, 2g, 800Hz.
+  //  2. Initialize with FULL-SCALE setting. You can set the scale
+  //     using either SCALE_2G, SCALE_4G, or SCALE_8G as the value.
+  //     That'll set the scale to +/-2g, 4g, or 8g respectively.
+  //accel.init(SCALE_4G); // Uncomment this out if you'd like
+  //  3. Initialize with FULL-SCALE and DATA RATE setting. If you
+  //     want control over how fast your accelerometer produces
+  //     data use one of the following options in the second param:
+  //     ODR_800, ODR_400, ODR_200, ODR_100, ODR_50, ODR_12,
+  //     ODR_6, or ODR_1.
+  //     Sets to 800, 400, 200, 100, 50, 12.5, 6.25, or 1.56 Hz.
+  //accel.init(SCALE_8G, ODR_6);
+  //
+  accel.init(SCALE_2G, ODR_6);  //Full scale, 2g, 12.5
+  delay(100);
+}
+
+
+/////////////////////////////////////////////////////////////////
+//                   MAIN LOOP
+/////////////////////////////////////////////////////////////////
+void loop() {
+  unsigned long currMils = millis();
+  /////////////////////////////////////////////////////
+  // BLUETOOTH xfer data to Rpi.
+  if (currMils - prevMils1 > int500msec) {
+      sprintf(xbuffer, "xx %05d  y %05d", x, y);
+      delay(0.01);
+      //sprintf(ybuffer, "y %05d ", y);      
+      Serial.println(xbuffer);
+      //Serial.print(ybuffer);
+      //sprintf(zbuffer, "z %05d ", z);      
+      //Serial.println(zbuffer);
+      BTserial.write(xbuffer);
+      //BTserial.write(ybuffer);
+      //  BTserial.write(zbuffer);
+      
+       prevMils1 = currMils;  //remember the time
+  }
+  currMils = millis();
+
+  //////////////////////////////////////////////
+  //ACCELEROMETER:  SparkFun IIC Triple Axis MMA8452Q
+  if (currMils - prevMils2 > int500msec) {
+    if (accel.available()) {
+      accel.read();  //read new variables
+      x = (accel.getX());     
+      y = accel.getY();
+      z = accel.getZ();
+    }  //end accel.available check
+    prevMils2 = currMils;
+
+  }  // end if interval
+}  //End loop
+
+//////////////////END MAIN LOOP//////////////////////////////////
+
+// Keep reading from HC-06 and send to Arduino Serial Monitor
+//if (BTserial.available())
+// {
+//   Serial.write(BTserial.read());
+//Serial.println(x);
+//Serial.println("Bluetooth2Serial");
+// }
+//BTserial.write(x);
+// Keep reading from Arduino Serial Monitor and send to HC-06
+//if (Serial.available())
+//{
+// BTserial.write(x);
+// BTserial.write('y');//BTserial.write(Serial.read());
+// BTserial.write(y);
+
+//Serial.println("Serial2Bluetooth");
