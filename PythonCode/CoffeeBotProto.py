@@ -22,7 +22,7 @@ GPIO.setup(ECHO_PIN2, GPIO.IN)
 def get_right_distance():
     # Trigger the sensor
     GPIO.output(TRIG_PIN1, True)
-    time.sleep(0.000011)  # add a bit to the trigger signal. SCL
+    time.sleep(0.00001)
     GPIO.output(TRIG_PIN1, False)
 
     # Measure the time for echo response
@@ -67,15 +67,13 @@ kit.motor3.throttle = 0.5
 kit.motor4.throttle = 0.5
 
 def motorLimit(x):
-    # Looks like motorLimit does not allow for a negative value whereas
-    # the checkFront and checkRight defs set negative values.
     if kit.motor1.throttle > x:
         kit.motor1.throttle = x
-    elif kit.motor1.throttle < 0: #should this be "-x", not 0? same for other 0's SCL
-        kit.motor1.throttle = 0  
+    elif kit.motor1.throttle < 0:
+        kit.motor1.throttle = 0
     if kit.motor2.throttle > x:
         kit.motor2.throttle = x
-    elif kit.motor2.throttle < 0: 
+    elif kit.motor2.throttle < 0:
         kit.motor2.throttle = 0
     if kit.motor3.throttle > x:
         kit.motor3.throttle = x
@@ -87,40 +85,37 @@ def motorLimit(x):
         kit.motor4.throttle = 0
 
 def checkFront():
-    bdistance = 25
+    bdistance = 30
     distance = get_front_distance()
     if distance <= bdistance:
         print(f"The front wall is {distance:.2f}cm away oh no")
-        kit.motor2.throttle = .7
-        kit.motor4.throttle = .7
-        kit.motor1.throttle = -.7
-        kit.motor3.throttle = -.7
-        motorLimit(.6)  # ?? Set values to [0.6 0.6 0.0 0.0]? SCL
-        time.sleep(1.5)  
+        kit.motor2.throttle = .45
+        kit.motor4.throttle = .45
+        kit.motor1.throttle = -.45
+        kit.motor3.throttle = -.45
+
+
 
 def checkRight():
     gdistance = 20
     distance = get_right_distance()
-    print(f"Distance: {distance:.2f} cm")
-    if distance > gdistance:  # is right side distance  too far
-        front = get_front_distance() #are we about to run into anything
+    print(f"The right wall is {distance:.2f} cm")
+    if distance > gdistance:
+        front = get_front_distance()
         print(f"Front wall is {front:.2f}cm distance")
-        if front <= 15:  # too close, turn it around
-            kit.motor2.throttle = 7
-            kit.motor4.throttle = 7
-            kit.motor1.throttle = -.7
-            kit.motor3.throttle = -.7
+        if front <= 15:
+            kit.motor2.throttle = .5
+            kit.motor4.throttle = .5
+            kit.motor1.throttle = -.5
+            kit.motor3.throttle = -.5
             print("Boutta faceplant")
-            time.sleep(.5)  # give it a bit to turn around
-            motorLimit(.7)  # ??  [0.7 0.7 0 0] ?
 
-        else: #nothing infront of us
-            kit.motor2.throttle = .4  # go forward and right.
+        else:
+            kit.motor2.throttle = .4
             kit.motor4.throttle = .4
             kit.motor1.throttle = .7
             kit.motor3.throttle = .7
             print("Too f a r")
-            motorLimit(.7)  # [0.4 0.4 0.7 0.7]
     elif distance < gdistance:
         #Too CLOSE
         kit.motor2.throttle = 0.7
@@ -129,10 +124,7 @@ def checkRight():
         kit.motor3.throttle = 0.5
         print("TOO CLOSE OH MY GOSH")
     else:
-        kit.motor2.throttle = .5
-        kit.motor4.throttle = .5
-        kit.motor1.throttle = .5
-        kit.motor3.throttle = .5
+        motorLimit(.4)
 
 
 
@@ -141,8 +133,8 @@ try:
 
         checkFront()
         checkRight()
-        # checkFront()  SCL
-        # motorLimit(.9)  SCL
+        motorLimit(.4)
+
 
 except KeyboardInterrupt:
     print("STOPPING")
